@@ -10,20 +10,30 @@ result = xlsread('FC35000.xlsx');
 
 %%  数据分析
 num_samples = length(result);  % 样本个数 
-kim =3;                      % 延时步长（kim个历史数据作为自变量）
-zim =  1;                      % 跨zim个时间点进行预测
+kim = 1;                      % 延时步长（kim个历史数据作为自变量）
+zim = 5;                      % 跨zim个时间点进行预测
 
 %%  构造数据集
 for i = 1: num_samples - kim - zim + 1
     res(i, :) = [reshape(result(i: i + kim - 1), 1, kim), result(i + kim + zim - 1)];
 end
 
+%%  划分训练集和测试集
+%temp = 1: 1: 922;
+
+%P_train = res(temp(1: 700), 1: 15)';
+%T_train = res(temp(1: 700), 16)';
+%M = size(P_train, 2);
+
+%P_test = res(temp(701: end), 1: 15)';
+%T_test = res(temp(701: end), 16)';
+%N = size(P_test, 2);
+
 %%  数据集分析
 outdim = 1;                                  % 最后一列为输出
 num_size = 0.55;                              % 训练集占数据集比例
 num_train_s = round(num_size * num_samples); % 训练集样本个数
 f_ = size(res, 2) - outdim;                  % 输入特征维度
-
 %%  划分训练集和测试集
 P_train = res(1: num_train_s, 1: f_)';
 T_train = res(1: num_train_s, f_ + 1: end)';
@@ -40,20 +50,14 @@ p_test = mapminmax('apply', P_test, ps_input);
 [t_train, ps_output] = mapminmax(T_train, 0, 1);
 t_test = mapminmax('apply', T_test, ps_output);
 
-%%  创建网络
-net = newff(p_train, t_train, 5);
-
-%%  设置训练参数
-net.trainParam.epochs = 5;     % 迭代次数1000 
-net.trainParam.goal = 1e-5;       % 误差阈值6
-net.trainParam.lr = 0.01;         % 学习率
-
-%%  训练网络
-net= train(net, p_train, t_train);
+%%  创建模型
+num_hiddens = 20;        % 隐藏层节点个数
+activate_model = 'sig';  % 激活函数
+[IW, B, LW, TF, TYPE] = elmtrain(p_train, t_train, num_hiddens, activate_model, 0);
 
 %%  仿真测试
-t_sim1 = sim(net, p_train);
-t_sim2 = sim(net, p_test);
+t_sim1 = elmpredict(p_train, IW, B, LW, TF, TYPE);
+t_sim2 = elmpredict(p_test , IW, B, LW, TF, TYPE);
 
 %%  数据反归一化
 T_sim1 = mapminmax('reverse', t_sim1, ps_output);
@@ -69,7 +73,7 @@ plot(1: M, T_train, 'r-', 1: M, T_sim1, 'b-', 'LineWidth', 1)
 legend('真实值', '预测值')
 xlabel('预测样本')
 ylabel('预测结果')
-string = {strcat('训练集预测结果对比：', ['RMSE=' num2str(error1)])};
+string = {'训练集预测结果对比'; ['RMSE=' num2str(error1)]};
 title(string)
 xlim([1, M])
 grid
@@ -79,7 +83,7 @@ plot(1: N, T_test, 'r-', 1: N, T_sim2, 'b-', 'LineWidth', 1)
 legend('真实值', '预测值')
 xlabel('预测样本')
 ylabel('预测结果')
-string = {strcat('测试集预测结果对比：', ['RMSE=' num2str(error2)])};
+string = {'测试集预测结果对比'; ['RMSE=' num2str(error2)]};
 title(string)
 xlim([1, N])
 grid
