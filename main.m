@@ -1,40 +1,29 @@
-%%%%%%%%%ÏÌÓãºÅ£ºÄ¬Ä¬¿ÆÑĞ×Ğ
-%%  Çå¿Õ»·¾³±äÁ¿
-warning off             % ¹Ø±Õ±¨¾¯ĞÅÏ¢
-close all               % ¹Ø±Õ¿ªÆôµÄÍ¼´°
-clear                   % Çå¿Õ±äÁ¿
-clc                     % Çå¿ÕÃüÁîĞĞ
+%%%%%%%%%å’¸é±¼å·ï¼šé»˜é»˜ç§‘ç ”ä»”
+%%  æ¸…ç©ºç¯å¢ƒå˜é‡
+warning off             % å…³é—­æŠ¥è­¦ä¿¡æ¯
+close all               % å…³é—­å¼€å¯çš„å›¾çª—
+clear                   % æ¸…ç©ºå˜é‡
+clc                     % æ¸…ç©ºå‘½ä»¤è¡Œ
 
-%%  µ¼ÈëÊı¾İ£¨Ê±¼äĞòÁĞµÄµ¥ÁĞÊı¾İ£©
+%%  å¯¼å…¥æ•°æ®ï¼ˆæ—¶é—´åºåˆ—çš„å•åˆ—æ•°æ®ï¼‰
 result = xlsread('FC35000.xlsx');
 
-%%  Êı¾İ·ÖÎö
-num_samples = length(result);  % Ñù±¾¸öÊı 
-kim = 1;                      % ÑÓÊ±²½³¤£¨kim¸öÀúÊ·Êı¾İ×÷Îª×Ô±äÁ¿£©
-zim = 5;                      % ¿çzim¸öÊ±¼äµã½øĞĞÔ¤²â
+%%  æ•°æ®åˆ†æ
+num_samples = length(result);  % æ ·æœ¬ä¸ªæ•° 
+kim = 2;                      % å»¶æ—¶æ­¥é•¿ï¼ˆkimä¸ªå†å²æ•°æ®ä½œä¸ºè‡ªå˜é‡ï¼‰
+zim =  1;                      % è·¨zimä¸ªæ—¶é—´ç‚¹è¿›è¡Œé¢„æµ‹
 
-%%  ¹¹ÔìÊı¾İ¼¯
+%%  åˆ’åˆ†æ•°æ®é›†
 for i = 1: num_samples - kim - zim + 1
     res(i, :) = [reshape(result(i: i + kim - 1), 1, kim), result(i + kim + zim - 1)];
 end
+%%  æ•°æ®é›†åˆ†æ
+outdim = 1;                                  % æœ€åä¸€åˆ—ä¸ºè¾“å‡º
+num_size = 0.55;                              % è®­ç»ƒé›†å æ•°æ®é›†æ¯”ä¾‹
+num_train_s = round(num_size * num_samples); % è®­ç»ƒé›†æ ·æœ¬ä¸ªæ•°
+f_ = size(res, 2) - outdim;                  % è¾“å…¥ç‰¹å¾ç»´åº¦
 
-%%  »®·ÖÑµÁ·¼¯ºÍ²âÊÔ¼¯
-%temp = 1: 1: 922;
-
-%P_train = res(temp(1: 700), 1: 15)';
-%T_train = res(temp(1: 700), 16)';
-%M = size(P_train, 2);
-
-%P_test = res(temp(701: end), 1: 15)';
-%T_test = res(temp(701: end), 16)';
-%N = size(P_test, 2);
-
-%%  Êı¾İ¼¯·ÖÎö
-outdim = 1;                                  % ×îºóÒ»ÁĞÎªÊä³ö
-num_size = 0.55;                              % ÑµÁ·¼¯Õ¼Êı¾İ¼¯±ÈÀı
-num_train_s = round(num_size * num_samples); % ÑµÁ·¼¯Ñù±¾¸öÊı
-f_ = size(res, 2) - outdim;                  % ÊäÈëÌØÕ÷Î¬¶È
-%%  »®·ÖÑµÁ·¼¯ºÍ²âÊÔ¼¯
+%%  åˆ’åˆ†è®­ç»ƒé›†å’Œæµ‹è¯•é›†
 P_train = res(1: num_train_s, 1: f_)';
 T_train = res(1: num_train_s, f_ + 1: end)';
 M = size(P_train, 2);
@@ -43,80 +32,122 @@ P_test = res(num_train_s + 1: end, 1: f_)';
 T_test = res(num_train_s + 1: end, f_ + 1: end)';
 N = size(P_test, 2);
 
-%%  Êı¾İ¹éÒ»»¯
-[p_train, ps_input] = mapminmax(P_train, 0, 1);
-p_test = mapminmax('apply', P_test, ps_input);
+%%  æ•°æ®å½’ä¸€åŒ–
+[P_train, ps_input] = mapminmax(P_train, 0, 1);
+P_test = mapminmax('apply', P_test, ps_input);
 
 [t_train, ps_output] = mapminmax(T_train, 0, 1);
 t_test = mapminmax('apply', T_test, ps_output);
 
-%%  ´´½¨Ä£ĞÍ
-num_hiddens = 20;        % Òş²Ø²ã½Úµã¸öÊı
-activate_model = 'sig';  % ¼¤»îº¯Êı
-[IW, B, LW, TF, TYPE] = elmtrain(p_train, t_train, num_hiddens, activate_model, 0);
+%%  æ•°æ®å¹³é“º
+% å°†æ•°æ®å¹³é“ºæˆ1ç»´æ•°æ®åªæ˜¯ä¸€ç§å¤„ç†æ–¹å¼
+% ä¹Ÿå¯ä»¥å¹³é“ºæˆ2ç»´æ•°æ®ï¼Œä»¥åŠ3ç»´æ•°æ®ï¼Œéœ€è¦ä¿®æ”¹å¯¹åº”æ¨¡å‹ç»“æ„
+% ä½†æ˜¯åº”è¯¥å§‹ç»ˆå’Œè¾“å…¥å±‚æ•°æ®ç»“æ„ä¿æŒä¸€è‡´
+P_train =  double(reshape(P_train, f_, 1, 1, M));
+P_test  =  double(reshape(P_test , f_, 1, 1, N));
 
-%%  ·ÂÕæ²âÊÔ
-t_sim1 = elmpredict(p_train, IW, B, LW, TF, TYPE);
-t_sim2 = elmpredict(p_test , IW, B, LW, TF, TYPE);
+% t_train = t_train';
+% t_test  = t_test' ;
+t_train =  double(t_train)';
+t_test  =  double(t_test )';
+%%  æ„é€ ç½‘ç»œç»“æ„
+layers = [
+ imageInputLayer([f_, 1, 1])                 % è¾“å…¥å±‚ è¾“å…¥æ•°æ®è§„æ¨¡[15, 1, 1]
+ 
+ convolution2dLayer([3, 1], 16, 'Stride', [1, 1], 'Padding', 'same')              
+                                             % å·ç§¯æ ¸å¤§å° 3 * 1 ç”Ÿæˆ 16 å¼ ç‰¹å¾å›¾
+ batchNormalizationLayer                     % æ‰¹å½’ä¸€åŒ–å±‚
+ reluLayer                                   % Reluæ¿€æ´»å±‚
+ 
+ convolution2dLayer([3, 1], 32, 'Stride', [1, 1], 'Padding', 'same') 
+                                             % å·ç§¯æ ¸å¤§å° 3 * 1 ç”Ÿæˆ 32 å¼ ç‰¹å¾å›¾
+ batchNormalizationLayer                     % æ‰¹å½’ä¸€åŒ–å±‚
+ reluLayer                                   % Reluæ¿€æ´»å±‚
 
-%%  Êı¾İ·´¹éÒ»»¯
+ dropoutLayer(0.2)                                  % Dropoutå±‚
+ fullyConnectedLayer(outdim)                      % å…¨è¿æ¥å±‚
+ regressionLayer];                           % å›å½’å±‚
+
+%%  å‚æ•°è®¾ç½®
+options = trainingOptions('adam', ...      % Adam æ¢¯åº¦ä¸‹é™ç®—æ³•
+    'MaxEpochs', 50, ...                  % æœ€å¤§è®­ç»ƒæ¬¡æ•° 800
+    'InitialLearnRate', 5e-3, ...          % åˆå§‹å­¦ä¹ ç‡ä¸º 0.005
+    'LearnRateSchedule', 'piecewise', ...  % å­¦ä¹ ç‡ä¸‹é™
+    'LearnRateDropFactor', 0.1, ...        % å­¦ä¹ ç‡ä¸‹é™å› å­ 0.1
+    'LearnRateDropPeriod', 600, ...        % ç»è¿‡ 600 æ¬¡è®­ç»ƒå å­¦ä¹ ç‡ä¸º 0.005 * 0.1
+    'L2Regularization', 1e-4, ...          % æ­£åˆ™åŒ–å‚æ•°
+    'Shuffle', 'every-epoch', ...          % æ¯æ¬¡è®­ç»ƒæ‰“ä¹±æ•°æ®é›†
+    'Plots', 'training-progress', ...      % ç”»å‡ºæ›²çº¿
+    'Verbose', false);
+%%  è®­ç»ƒæ¨¡å‹
+net = trainNetwork(P_train, t_train, layers, options);
+
+%%  ä»¿çœŸé¢„æµ‹
+t_sim1 = predict(net, P_train);
+t_sim2 = predict(net, P_test );
+
+%%  æ•°æ®åå½’ä¸€åŒ–
 T_sim1 = mapminmax('reverse', t_sim1, ps_output);
 T_sim2 = mapminmax('reverse', t_sim2, ps_output);
 
-%%  ¾ù·½¸ùÎó²î
-error1 = sqrt(sum((T_sim1 - T_train).^2) ./ M);
-error2 = sqrt(sum((T_sim2 - T_test ).^2) ./ N);
+%%  å‡æ–¹æ ¹è¯¯å·®
+error1 = sqrt(sum((T_sim1' - T_train).^2) ./ M);
+error2 = sqrt(sum((T_sim2' - T_test ).^2) ./ N);
 
-%%  »æÍ¼
+%%  æŸ¥çœ‹ç½‘ç»œç»“æ„
+analyzeNetwork(net)
+
+%%  ç»˜å›¾
 figure
 plot(1: M, T_train, 'r-', 1: M, T_sim1, 'b-', 'LineWidth', 1)
-legend('ÕæÊµÖµ', 'Ô¤²âÖµ')
-xlabel('Ô¤²âÑù±¾')
-ylabel('Ô¤²â½á¹û')
-string = {'ÑµÁ·¼¯Ô¤²â½á¹û¶Ô±È'; ['RMSE=' num2str(error1)]};
+legend('çœŸå®å€¼', 'é¢„æµ‹å€¼')
+xlabel('é¢„æµ‹æ ·æœ¬')
+ylabel('é¢„æµ‹ç»“æœ')
+string = {'è®­ç»ƒé›†é¢„æµ‹ç»“æœå¯¹æ¯”'; ['RMSE=' num2str(error1)]};
 title(string)
 xlim([1, M])
 grid
 
 figure
 plot(1: N, T_test, 'r-', 1: N, T_sim2, 'b-', 'LineWidth', 1)
-legend('ÕæÊµÖµ', 'Ô¤²âÖµ')
-xlabel('Ô¤²âÑù±¾')
-ylabel('Ô¤²â½á¹û')
-string = {'²âÊÔ¼¯Ô¤²â½á¹û¶Ô±È'; ['RMSE=' num2str(error2)]};
+legend('çœŸå®å€¼', 'é¢„æµ‹å€¼')
+xlabel('é¢„æµ‹æ ·æœ¬')
+ylabel('é¢„æµ‹ç»“æœ')
+string = {'æµ‹è¯•é›†é¢„æµ‹ç»“æœå¯¹æ¯”'; ['RMSE=' num2str(error2)]};
 title(string)
 xlim([1, N])
 grid
 
-%%  Ïà¹ØÖ¸±ê¼ÆËã
+%%  ç›¸å…³æŒ‡æ ‡è®¡ç®—
 % R2
-R1 = 1 - norm(T_train - T_sim1)^2 / norm(T_train - mean(T_train))^2;
-R2 = 1 - norm(T_test  - T_sim2)^2 / norm(T_test  - mean(T_test ))^2;
+R1 = 1 - norm(T_train - T_sim1')^2 / norm(T_train - mean(T_train))^2;
+R2 = 1 - norm(T_test  - T_sim2')^2 / norm(T_test  - mean(T_test ))^2;
 
-disp(['ÑµÁ·¼¯Êı¾İµÄR2Îª£º', num2str(R1)])
-disp(['²âÊÔ¼¯Êı¾İµÄR2Îª£º', num2str(R2)])
+disp(['è®­ç»ƒé›†æ•°æ®çš„R2ä¸ºï¼š', num2str(R1)])
+disp(['æµ‹è¯•é›†æ•°æ®çš„R2ä¸ºï¼š', num2str(R2)])
 
 % MAE
-mae1 = sum(abs(T_sim1 - T_train)) ./ M ;
-mae2 = sum(abs(T_sim2 - T_test )) ./ N ;
+mae1 = sum(abs(T_sim1' - T_train)) ./ M ;
+mae2 = sum(abs(T_sim2' - T_test )) ./ N ;
 
-disp(['ÑµÁ·¼¯Êı¾İµÄMAEÎª£º', num2str(mae1)])
-disp(['²âÊÔ¼¯Êı¾İµÄMAEÎª£º', num2str(mae2)])
+disp(['è®­ç»ƒé›†æ•°æ®çš„MAEä¸ºï¼š', num2str(mae1)])
+disp(['æµ‹è¯•é›†æ•°æ®çš„MAEä¸ºï¼š', num2str(mae2)])
 
 % MBE
-mbe1 = sum(T_sim1 - T_train) ./ M ;
-mbe2 = sum(T_sim2 - T_test ) ./ N ;
+mbe1 = sum(T_sim1' - T_train) ./ M ;
+mbe2 = sum(T_sim2' - T_test ) ./ N ;
 
-disp(['ÑµÁ·¼¯Êı¾İµÄMBEÎª£º', num2str(mbe1)])
-disp(['²âÊÔ¼¯Êı¾İµÄMBEÎª£º', num2str(mbe2)])
+disp(['è®­ç»ƒé›†æ•°æ®çš„MBEä¸ºï¼š', num2str(mbe1)])
+disp(['æµ‹è¯•é›†æ•°æ®çš„MBEä¸ºï¼š', num2str(mbe2)])
+
 %  MAPE
-mape1 = sum(abs((T_sim1 - T_train)./T_train)) ./ M ;
-mape2 = sum(abs((T_sim2 - T_test )./T_test )) ./ N ;
+mape1 = sum(abs((T_sim1' - T_train)./T_train)) ./ M ;
+mape2 = sum(abs((T_sim2' - T_test )./T_test )) ./ N ;
 
-disp(['ÑµÁ·¼¯Êı¾İµÄMAPEÎª£º', num2str(mape1)])
-disp(['²âÊÔ¼¯Êı¾İµÄMAPEÎª£º', num2str(mape2)])
+disp(['è®­ç»ƒé›†æ•°æ®çš„MAPEä¸ºï¼š', num2str(mape1)])
+disp(['æµ‹è¯•é›†æ•°æ®çš„MAPEä¸ºï¼š', num2str(mape2)])
 
-%%  »æÖÆÉ¢µãÍ¼
+%%  ç»˜åˆ¶æ•£ç‚¹å›¾
 sz = 25;
 c = 'b';
 
@@ -124,19 +155,19 @@ figure
 scatter(T_train, T_sim1, sz, c)
 hold on
 plot(xlim, ylim, '--k')
-xlabel('ÑµÁ·¼¯ÕæÊµÖµ');
-ylabel('ÑµÁ·¼¯Ô¤²âÖµ');
+xlabel('è®­ç»ƒé›†çœŸå®å€¼');
+ylabel('è®­ç»ƒé›†é¢„æµ‹å€¼');
 xlim([min(T_train) max(T_train)])
 ylim([min(T_sim1) max(T_sim1)])
-title('ÑµÁ·¼¯Ô¤²âÖµ vs. ÑµÁ·¼¯ÕæÊµÖµ')
+title('è®­ç»ƒé›†é¢„æµ‹å€¼ vs. è®­ç»ƒé›†çœŸå®å€¼')
 
 figure
 scatter(T_test, T_sim2, sz, c)
 hold on
 plot(xlim, ylim, '--k')
-xlabel('²âÊÔ¼¯ÕæÊµÖµ');
-ylabel('²âÊÔ¼¯Ô¤²âÖµ');
+xlabel('æµ‹è¯•é›†çœŸå®å€¼');
+ylabel('æµ‹è¯•é›†é¢„æµ‹å€¼');
 xlim([min(T_test) max(T_test)])
 ylim([min(T_sim2) max(T_sim2)])
-title('²âÊÔ¼¯Ô¤²âÖµ vs. ²âÊÔ¼¯ÕæÊµÖµ')
-%%%%%%%%%ÏÌÓãºÅ£ºÄ¬Ä¬¿ÆÑĞ×Ğ
+title('æµ‹è¯•é›†é¢„æµ‹å€¼ vs. æµ‹è¯•é›†çœŸå®å€¼')
+%%%%%%%%%å’¸é±¼å·ï¼šé»˜é»˜ç§‘ç ”ä»”
